@@ -1,3 +1,3 @@
 # FastBEAST
 
-[![Coverage](https://codecov.io/gh/sbadrian/FastBEAST.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sbadrian/FastBEAST.jl)
+[![codecov](https://codecov.io/gh/FastBEAST/FastBEAST.jl/graph/badge.svg?token=RDRQTBWQS3)](https://codecov.io/gh/FastBEAST/FastBEAST.jl)
