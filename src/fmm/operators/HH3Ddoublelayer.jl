@@ -30,6 +30,7 @@ function Base.size(fmat::FMMMatrixDL, dim=nothing)
     end
 end
 
+#=
 function Base.size(fmat::Adjoint{T}, dim=nothing) where T <: FMMMatrixDL
     if dim === nothing
         return reverse(size(adjoint(fmat)))
@@ -40,7 +41,7 @@ function Base.size(fmat::Adjoint{T}, dim=nothing) where T <: FMMMatrixDL
     else
         error("dim must be either 1 or 2")
     end
-end
+end=#
 
 @views function LinearAlgebra.mul!(y::AbstractVecOrMat, A::FMMMatrixDL, x::AbstractVector)
     LinearMaps.check_dim_mul(y, A, x)

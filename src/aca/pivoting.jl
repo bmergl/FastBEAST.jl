@@ -96,7 +96,7 @@ function filldistance(
     return [argmax(fdmemory.h)]
 end
 
-function update!(fdmemory::FD, pivotidx::Int)
+function update_filldistance!(fdmemory::FD, pivotidx::Int)
 
     for k in eachindex(fdmemory.h)
         if fdmemory.h[k] > norm(fdmemory.pos[k] - fdmemory.pos[pivotidx])
@@ -171,7 +171,7 @@ function pivoting(
     @views length(nextpivots) > 1 && (
         nextpivot = nextpivots[argmax(roworcolumn[nextpivots])]
     )
-    update!(pivstrat, nextpivot)
+    update_filldistance!(pivstrat, nextpivot)
     
     return nextpivot
 end

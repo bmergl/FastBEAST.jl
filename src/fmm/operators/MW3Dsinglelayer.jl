@@ -34,7 +34,9 @@ function Base.size(fmat::FMMMatrixMWSL, dim=nothing)
     end
 end
 
+#=
 function Base.size(fmat::Adjoint{T}, dim=nothing) where T <: FMMMatrixMWSL
+    println("adjoint")
     if dim === nothing
         return reverse(size(adjoint(fmat)))
     elseif dim == 1
@@ -44,7 +46,7 @@ function Base.size(fmat::Adjoint{T}, dim=nothing) where T <: FMMMatrixMWSL
     else
         error("dim must be either 1 or 2")
     end
-end
+end=#
 
 @views function LinearAlgebra.mul!(y::AbstractVecOrMat, A::FMMMatrixMWSL, x::AbstractVector)
     LinearMaps.check_dim_mul(y, A, x)
@@ -70,26 +72,26 @@ end
 
 @views function LinearAlgebra.mul!(
     y::AbstractVecOrMat,
-    A::LinearMaps.TransposeMap{<:Any,<:FMMMatrixMWSL},
+    At::LinearMaps.TransposeMap{<:Any,<:FMMMatrixMWSL},
     x::AbstractVector
 )
-    LinearMaps.check_dim_mul(y, A, x)
+    LinearMaps.check_dim_mul(y, At, x)
 
-    if eltype(x) != eltype(A)
-        x = eltype(A).(x)
+    A = At.lmap
+    if eltype(x) != eltype(At)
+        x = eltype(At).(x)
     end
     fill!(y, zero(eltype(y)))
 
-    res1 = A.B1_test * (A.fmm * (A.B1 * x))[:,1]
-    res2 = A.B2_test * (A.fmm * (A.B2 * x))[:,1]
-    res3 = A.B3_test * (A.fmm * (A.B3 * x))[:,1]
+    res1 = transpose(A.B1) * (A.fmm_t * (transpose(A.B1_test) * x))[:,1]
+    res2 = transpose(A.B2) * (A.fmm_t * (transpose(A.B2_test) * x))[:,1]
+    res3 = transpose(A.B3) * (A.fmm_t * (transpose(A.B3_test) * x))[:,1]
 
     y1 = (A.op.α .* (res1 + res2 + res3))
 
-    y2 = - (A.op.β) .*
-        (A.Bdiv_test * (A.fmm * (A.Bdiv * x))[:,1])
+    y2 = - (A.op.β) .* (transpose(A.Bdiv) * (A.fmm_t * (transpose(A.Bdiv_test) * x))[:,1])
 
-    y.= (y1 - y2) - A.BtCB * x + A.fullmat * x
+    y.= (y1 - y2) - transpose(A.BtCB) * x + transpose(A.fullmat) * x
 
     return y
 end
