@@ -49,6 +49,6 @@ Base.size(block::MatrixBlock) = (length(block.τ), length(block.σ))
 
 LinearAlgebra.rank(block::MatrixBlock) = size(block.M, 2)
 
-function nnz(lmrb::MatrixBlock{I, F, T}) where {I, F, T <: LowRankMatrix{F}}
+function nnzs(lmrb::MatrixBlock{I, F, T}) where {I, F, T <: LowRankMatrix{F}}
     return size(lmrb.M.U, 1)*size(lmrb.M.U, 2) + size(lmrb.M.V, 1)*size(lmrb.M.V, 2)
 end

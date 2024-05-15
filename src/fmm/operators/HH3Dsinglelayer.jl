@@ -29,6 +29,7 @@ function Base.size(fmat::FMMMatrixSL, dim=nothing)
     end
 end
 
+#=
 function Base.size(fmat::Adjoint{T}, dim=nothing) where T <: FMMMatrixSL
     if dim === nothing
         return reverse(size(adjoint(fmat)))
@@ -39,11 +40,10 @@ function Base.size(fmat::Adjoint{T}, dim=nothing) where T <: FMMMatrixSL
     else
         error("dim must be either 1 or 2")
     end
-end
+end=#
 
 @views function LinearAlgebra.mul!(y::AbstractVecOrMat, A::FMMMatrixSL, x::AbstractVector)
     LinearMaps.check_dim_mul(y, A, x)
-
     fill!(y, zero(eltype(y)))
 
     if eltype(x) <: Complex && eltype(A.fmm) <: Real
@@ -55,7 +55,7 @@ end
     if eltype(x) != eltype(A.fmm)
         xfmm = eltype(A.fmm).(x)
     else
-        xfmm = x
+       xfmm = x
     end
 
     y .= A.op.alpha .* (A.B_test * (A.fmm * (A.B_trial * xfmm))[:,1]) - A.BtCB * x + A.fullmat * x

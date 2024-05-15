@@ -12,7 +12,7 @@ struct HMatrix{I, K} <: LinearMaps.LinearMap{K}
     ismultithreaded::Bool
 end
 
-function nnz(hmat::HT) where HT <: HMatrix
+function nnzs(hmat::HT) where HT <: HMatrix
     return hmat.nnz
 end
 
@@ -57,6 +57,7 @@ function Base.size(hmat::HMatrix, dim=nothing)
     end
 end
 
+#=
 function Base.size(hmat::Adjoint{T}, dim=nothing) where T <: HMatrix
     if dim === nothing
         return reverse(size(adjoint(hmat)))
@@ -67,7 +68,7 @@ function Base.size(hmat::Adjoint{T}, dim=nothing) where T <: HMatrix
     else
         error("dim must be either 1 or 2")
     end
-end
+end=#
 
 @views function LinearAlgebra.mul!(y::AbstractVecOrMat, A::HMatrix, x::AbstractVector)
     LinearMaps.check_dim_mul(y, A, x)
@@ -183,12 +184,12 @@ end
         yy = zeros(eltype(y), size(transA, 1), Threads.nthreads())
 
         Threads.@threads for mb in transA.lmap.fullrankblocks
-            mul!(cc[1:size(mb.M, 2), Threads.threadid()], transpose(mb.M), x[mb.τ])
+            mul!(cc[1:size(mb.M, 2), Threads.threadid()], adjoint(mb.M), x[mb.τ])
             yy[mb.σ, Threads.threadid()] .+= cc[1:size(mb.M, 2), Threads.threadid()]
         end
         
         Threads.@threads for mb in transA.lmap.lowrankblocks
-            mul!(cc[1:size(mb.M, 2), Threads.threadid()], transpose(mb.M), x[mb.τ])
+            mul!(cc[1:size(mb.M, 2), Threads.threadid()], adjoint(mb.M), x[mb.τ])
             yy[mb.σ, Threads.threadid()] .+= cc[1:size(mb.M, 2), Threads.threadid()]
         end
 
@@ -313,7 +314,7 @@ function HMatrix(
                     compressor=compressor
                 )
             )
-            nonzeros += nnz(lowrankblocks[end])
+            nonzeros += nnzs(lowrankblocks[end])
             verbose && next!(p)
         end
     elseif multithreading
@@ -335,7 +336,7 @@ function HMatrix(
                 )
             )
             nonzeros_perthread[Threads.threadid()] += 
-                nnz(lowrankblocks_perthread[Threads.threadid()][end])
+                nnzs(lowrankblocks_perthread[Threads.threadid()][end])
             verbose && next!(p)
         end
 
