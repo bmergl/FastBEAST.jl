@@ -6,6 +6,7 @@ using SparseArrays
 
 struct FMMMatrixMWDL{I, F <: Real, K} <: LinearMaps.LinearMap{K}
     fmm::ExaFMMt.ExaFMM{K}
+    fmm_t::ExaFMMt.ExaFMM{K}
     op::BEAST.MWDoubleLayer3D
     B1::SparseMatrixCSC{F, I}
     B2::SparseMatrixCSC{F, I}
@@ -66,23 +67,23 @@ end
 
 @views function LinearAlgebra.mul!(
     y::AbstractVecOrMat,
-    A::LinearMaps.TransposeMap{<:Any,<:FMMMatrixMWDL},
+    At::LinearMaps.TransposeMap{<:Any,<:FMMMatrixMWDL},
     x::AbstractVector
 )
-    LinearMaps.check_dim_mul(y, A, x)
-
+    LinearMaps.check_dim_mul(y, At, x)
+    A = At.lmap
     if eltype(x) != eltype(A)
         x = eltype(A).(x)
     end
     fill!(y, zero(eltype(y)))
 
-    res1 = (A.fmm * (A.B1 * x))[:,2:4]
-    res2 = (A.fmm * (A.B2 * x))[:,2:4]
-    res3 = (A.fmm * (A.B3 * x))[:,2:4]
+    res1 = (A.fmm_t * (transpose(A.B1_test) * x))[:,2:4]
+    res2 = (A.fmm_t * (transpose(A.B2_test) * x))[:,2:4]
+    res3 = (A.fmm_t * (transpose(A.B3_test) * x))[:,2:4]
 
-    y1 = A.B1_test * (res3[:,2] - res2[:,3])
-    y2 = A.B2_test * (res1[:,3] - res3[:,1])
-    y3 = A.B3_test * (res2[:,1] - res1[:,2])
+    y1 = transpose(A.B1) * (res3[:,2] - res2[:,3])
+    y2 = transpose(A.B2) * (res1[:,3] - res3[:,1])
+    y3 = transpose(A.B3) * (res2[:,1] - res1[:,2])
 
     y.= (y1 + y2 + y3) - A.BtCB * x + A.fullmat * x
 
@@ -91,27 +92,13 @@ end
 
 @views function LinearAlgebra.mul!(
     y::AbstractVecOrMat,
-    A::LinearMaps.AdjointMap{<:Any,<:FMMMatrixMWDL},
+    At::LinearMaps.AdjointMap{<:Any,<:FMMMatrixMWDL},
     x::AbstractVector
 )
-    LinearMaps.check_dim_mul(y, A, x)
 
-    if eltype(x) != eltype(A)
-        x = eltype(A).(x)
-    end
-    fill!(y, zero(eltype(y)))
+    mul!(y, transpose(adjoint(At)), conj(x))
 
-    res1 = (A.fmm * (A.B1 * x))[:,2:4]
-    res2 = (A.fmm * (A.B2 * x))[:,2:4]
-    res3 = (A.fmm * (A.B3 * x))[:,2:4]
-
-    y1 = A.B1_test * (res3[:,2] - res2[:,3])
-    y2 = A.B2_test * (res1[:,3] - res3[:,1])
-    y3 = A.B3_test * (res2[:,1] - res1[:,2])
-
-    y.= A.op.alpha .* (y1 + y2 + y3) - A.BtCB * x + A.fullmat * x
-
-    return y
+    return conj!(y)
 end
 
 function FMMMatrix(
@@ -121,6 +108,7 @@ function FMMMatrix(
     testqp::Matrix,
     trialqp::Matrix,
     fmm::ExaFMMt.ExaFMM{K},
+    fmm_t::ExaFMMt.ExaFMM{K},
     BtCB::HMatrix{I, K},
     fullmat::HMatrix{I, K},
 ) where {I, K}
@@ -135,6 +123,7 @@ function FMMMatrix(
       
     return FMMMatrixMWDL(
         fmm,
+        fmm_t,
         op,
         B1,
         B2,
