@@ -20,7 +20,7 @@ TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [compat]
 BEAST = "2.4.0"
-CompScienceMeshes = "0.7, 0.8"
+CompScienceMeshes = "0.7, 0.8, 0.9"
 ExaFMMt = "0.1.1"
 LinearMaps = "^3"
 MKL = "0.6.3, 0.7"
